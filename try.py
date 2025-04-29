@@ -9,11 +9,15 @@ from kivy.uix.progressbar import ProgressBar
 from kivy.clock import Clock
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.widget import Widget
+from kivy.uix.spinner import Spinner
 from kivy.graphics import Color, Line, Rectangle
 import os
 import threading
 import subprocess
+import tkinter as tk
+from tkinter import filedialog
 import math
+from kivy.config import Config
 
 class Rotating3DBox(Widget):
     def __init__(self, **kwargs):
@@ -71,21 +75,6 @@ class Rotating3DBox(Widget):
         self.angle += 1
         self.update_graphics()
 
-
-from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.button import Button
-from kivy.uix.label import Label
-from kivy.uix.textinput import TextInput
-from kivy.uix.progressbar import ProgressBar
-from kivy.clock import Clock
-from kivy.uix.scrollview import ScrollView
-from kivy.uix.widget import Widget
-import os
-import threading
-import subprocess
-
 class IntroScreen(Screen):
     def on_enter(self):
         layout = BoxLayout(orientation="vertical", padding=50)
@@ -113,73 +102,366 @@ class IntroScreen(Screen):
         self.bg_rect.pos = instance.pos
 
     def start_app(self, instance):
+        self.manager.current = "disk"
+
+# Disk Creation screen
+class DiskScreen(Screen):
+    def __init__(self, **kwargs):
+        super(DiskScreen, self).__init__(**kwargs)
+        
+        # Main container with padding
+        self.layout = BoxLayout(orientation="vertical", spacing=20, padding=40)
+        self.add_widget(self.layout)
+
+        # Title
+        title = Label(
+            text="Create Virtual Disk",
+            font_size=32,
+            bold=True,
+            color=(0.3, 0.7, 1, 1),
+            size_hint=(1, None),
+            height=50
+        )
+        self.layout.add_widget(title)
+
+        # Form container with proper spacing
+        self.form = GridLayout(
+            cols=2,
+            spacing=20,
+            padding=20,
+            size_hint=(1, None),
+            height=300
+        )
+        
+        # Add form elements with proper spacing
+        form_elements = [
+            ("Disk Size (GB):", "10", "text"),
+            ("Disk Format:", "qcow2", "spinner"),
+            ("Storage Path:", os.path.expanduser("~/vm_disks"), "text"),
+            ("Disk Name:", "vm_disk", "text")
+        ]
+        
+        for label_text, default_value, input_type in form_elements:
+            # Label
+            label = Label(
+                text=label_text,
+                font_size=20,
+                color=(1, 1, 1, 1),
+                size_hint=(0.4, None),
+                height=40
+            )
+            self.form.add_widget(label)
+            
+            # Input field container for storage path
+            if label_text == "Storage Path:":
+                input_container = BoxLayout(orientation="horizontal", spacing=10, size_hint=(0.6, None), height=40)
+                
+                # Text input
+                input_field = TextInput(
+                    text=default_value,
+                    multiline=False,
+                    font_size=20,
+                    size_hint=(0.7, 1),
+                    background_color=(0.2, 0.2, 0.2, 1),
+                    foreground_color=(1, 1, 1, 1)
+                )
+                
+                # Browse button
+                browse_btn = Button(
+                    text="Browse",
+                    size_hint=(0.3, 1),
+                    background_color=(0.3, 0.7, 1, 1),
+                    font_size=16
+                )
+                browse_btn.bind(on_press=lambda x: self.browse_directory(input_field))
+                
+                input_container.add_widget(input_field)
+                input_container.add_widget(browse_btn)
+                self.form.add_widget(input_container)
+                self.storage_input = input_field
+            else:
+                # Regular input field
+                if input_type == "text":
+                    input_field = TextInput(
+                        text=default_value,
+                        multiline=False,
+                        font_size=20,
+                        size_hint=(0.6, None),
+                        height=40,
+                        background_color=(0.2, 0.2, 0.2, 1),
+                        foreground_color=(1, 1, 1, 1)
+                    )
+                elif input_type == "spinner":
+                    input_field = Spinner(
+                        text=default_value,
+                        values=["qcow2", "raw", "vmdk", "vhdx"],
+                        font_size=20,
+                        size_hint=(0.6, None),
+                        height=40,
+                        background_color=(0.2, 0.2, 0.2, 1),
+                        color=(1, 1, 1, 1)
+                    )
+                
+                self.form.add_widget(input_field)
+            
+            # Store reference to input field
+            if label_text == "Disk Size (GB):":
+                self.disk_input = input_field
+            elif label_text == "Disk Format:":
+                self.disk_format_input = input_field
+            elif label_text == "Disk Name:":
+                self.disk_name_input = input_field
+
+        # Add form to scroll view
+        scroll = ScrollView(
+            size_hint=(1, 0.7),
+            do_scroll_x=False
+        )
+        scroll.add_widget(self.form)
+        self.layout.add_widget(scroll)
+
+        # Button container
+        button_container = BoxLayout(orientation="horizontal", spacing=20, size_hint=(1, None), height=60)
+        
+        # Next button
+        self.next_btn = Button(
+            text="Next",
+            size_hint=(1, 1),
+            background_color=(0.3, 0.7, 1, 1),
+            font_size=24
+        )
+        self.next_btn.bind(on_press=self.next_screen)
+        button_container.add_widget(self.next_btn)
+        
+        self.layout.add_widget(button_container)
+
+        # Progress bar with proper styling
+        self.progress = ProgressBar(
+            max=100,
+            size_hint=(1, None),
+            height=30
+        )
+        self.layout.add_widget(self.progress)
+
+        # Output label with proper styling
+        self.output_label = Label(
+            text="Ready",
+            size_hint=(1, None),
+            height=40,
+            font_size=20,
+            color=(1, 1, 1, 1)
+        )
+        self.layout.add_widget(self.output_label)
+
+    def browse_directory(self, text_input):
+        # Hide the main window temporarily
+        root = tk.Tk()
+        root.withdraw()
+        
+        # Open directory dialog
+        directory = filedialog.askdirectory(
+            title="Select Storage Directory",
+            initialdir=os.path.expanduser("~")
+        )
+        
+        # Update the text input if a directory was selected
+        if directory:
+            text_input.text = directory
+        
+        # Destroy the temporary window
+        root.destroy()
+
+    def next_screen(self, instance):
         self.manager.current = "vm"
 
+
+# VM Properties screen
 class VMScreen(Screen):
     def __init__(self, **kwargs):
         super(VMScreen, self).__init__(**kwargs)
-        self.layout = BoxLayout(orientation="vertical", spacing=10, padding=20)
+        
+        # Main container with padding
+        self.layout = BoxLayout(orientation="vertical", spacing=20, padding=40)
         self.add_widget(self.layout)
 
-        self.form = GridLayout(cols=2, spacing=10, size_hint_y=None)
-        self.form.bind(minimum_height=self.form.setter("height"))
+        # Title
+        title = Label(
+            text="Configure Virtual Machine",
+            font_size=32,
+            bold=True,
+            color=(0.3, 0.7, 1, 1),
+            size_hint=(1, None),
+            height=50
+        )
+        self.layout.add_widget(title)
 
-        self.form.add_widget(Label(text="RAM (GB):"))
-        self.ram_input = TextInput(text="2")
-        self.form.add_widget(self.ram_input)
+        # Form container with proper spacing
+        self.form = GridLayout(
+            cols=2,
+            spacing=20,
+            padding=20,
+            size_hint=(1, None),
+            height=300
+        )
+        
+        # Add form elements with proper spacing
+        form_elements = [
+            ("RAM (GB):", "2", "text"),
+            ("CPU Cores:", "2", "text"),
+            ("ISO File:", "", "text")
+        ]
+        
+        for label_text, default_value, input_type in form_elements:
+            # Label
+            label = Label(
+                text=label_text,
+                font_size=20,
+                color=(1, 1, 1, 1),
+                size_hint=(0.4, None),
+                height=40
+            )
+            self.form.add_widget(label)
+            
+            # Input field container for ISO file
+            if label_text == "ISO File:":
+                input_container = BoxLayout(orientation="horizontal", spacing=10, size_hint=(0.6, None), height=40)
+                
+                # Text input
+                input_field = TextInput(
+                    text=default_value,
+                    multiline=False,
+                    font_size=20,
+                    size_hint=(0.7, 1),
+                    background_color=(0.2, 0.2, 0.2, 1),
+                    foreground_color=(1, 1, 1, 1)
+                )
+                
+                # Browse button
+                browse_btn = Button(
+                    text="Browse",
+                    size_hint=(0.3, 1),
+                    background_color=(0.3, 0.7, 1, 1),
+                    font_size=16
+                )
+                browse_btn.bind(on_press=lambda x: self.browse_iso(input_field))
+                
+                input_container.add_widget(input_field)
+                input_container.add_widget(browse_btn)
+                self.form.add_widget(input_container)
+                self.iso_input = input_field
+            else:
+                # Regular input field
+                input_field = TextInput(
+                    text=default_value,
+                    multiline=False,
+                    font_size=20,
+                    size_hint=(0.6, None),
+                    height=40,
+                    background_color=(0.2, 0.2, 0.2, 1),
+                    foreground_color=(1, 1, 1, 1)
+                )
+                self.form.add_widget(input_field)
+            
+            # Store reference to input field
+            if label_text == "RAM (GB):":
+                self.ram_input = input_field
+            elif label_text == "CPU Cores:":
+                self.cpu_input = input_field
 
-        self.form.add_widget(Label(text="CPU Cores:"))
-        self.cpu_input = TextInput(text="2")
-        self.form.add_widget(self.cpu_input)
-
-        self.form.add_widget(Label(text="Disk Size (GB):"))
-        self.disk_input = TextInput(text="10")
-        self.form.add_widget(self.disk_input)
-
-        self.form.add_widget(Label(text="Disk Format:"))
-        self.disk_format_input = TextInput(text="qcow2")
-        self.form.add_widget(self.disk_format_input)
-
-        self.form.add_widget(Label(text="Storage Path:"))
-        self.storage_input = TextInput(text=os.path.expanduser("~/vm_disks"))
-        self.form.add_widget(self.storage_input)
-
-        self.form.add_widget(Label(text="Disk Name:"))
-        self.disk_name_input = TextInput(text="vm_disk")
-        self.form.add_widget(self.disk_name_input)
-
-        scroll = ScrollView(size_hint=(1, None), size=(800, 400))
+        # Add form to scroll view
+        scroll = ScrollView(
+            size_hint=(1, 0.7),
+            do_scroll_x=False
+        )
         scroll.add_widget(self.form)
-
         self.layout.add_widget(scroll)
 
+        # Button container
+        button_container = BoxLayout(orientation="horizontal", spacing=20, size_hint=(1, None), height=60)
+        
+        # Back button
+        self.back_btn = Button(
+            text="Back",
+            size_hint=(0.5, 1),
+            background_color=(0.3, 0.7, 1, 1),
+            font_size=24
+        )
+        self.back_btn.bind(on_press=self.prev_screen)
+        button_container.add_widget(self.back_btn)
+
+        # Create VM button
         self.create_btn = Button(
             text="Create VM",
-            size_hint=(1, None),
-            height=50,
+            size_hint=(0.5, 1),
             background_color=(0.3, 0.7, 1, 1),
+            font_size=24
         )
         self.create_btn.bind(on_press=self.create_vm)
-        self.layout.add_widget(self.create_btn)
+        button_container.add_widget(self.create_btn)
+        
+        self.layout.add_widget(button_container)
 
-        self.progress = ProgressBar(max=100, size_hint=(1, None), height=20)
+        # Progress bar with proper styling
+        self.progress = ProgressBar(
+            max=100,
+            size_hint=(1, None),
+            height=30
+        )
         self.layout.add_widget(self.progress)
 
-        self.output_label = Label(text="Ready", size_hint=(1, None), height=50)
+        # Output label with proper styling
+        self.output_label = Label(
+            text="Ready",
+            size_hint=(1, None),
+            height=40,
+            font_size=20,
+            color=(1, 1, 1, 1)
+        )
         self.layout.add_widget(self.output_label)
+
+    def prev_screen(self, instance):
+        self.manager.current = "disk"
+
+    def browse_iso(self, text_input):
+        # Hide the main window temporarily
+        root = tk.Tk()
+        root.withdraw()
+        
+        # Open file dialog for ISO selection
+        file_path = filedialog.askopenfilename(
+            title="Select ISO File",
+            filetypes=[("ISO files", "*.iso"), ("All files", "*.*")],
+            initialdir=os.path.expanduser("~")
+        )
+        
+        # Update the text input if a file was selected
+        if file_path:
+            text_input.text = file_path
+        
+        # Destroy the temporary window
+        root.destroy()
 
     def create_vm(self, instance):
         try:
             ram = int(self.ram_input.text)
             cpu = int(self.cpu_input.text)
-            disk = int(self.disk_input.text)
         except:
-            self.output_label.text = "Invalid input."
+            self.output_label.text = "Invalid input values."
             return
 
-        disk_format = self.disk_format_input.text
-        storage_path = self.storage_input.text
-        disk_name = self.disk_name_input.text
+        iso_path = self.iso_input.text
+        
+        # Get disk parameters from the disk screen
+        disk_screen = self.manager.get_screen('disk')
+        try:
+            disk_size = int(disk_screen.disk_input.text)
+        except:
+            self.output_label.text = "Invalid disk size."
+            return
+
+        disk_format = disk_screen.disk_format_input.text
+        storage_path = disk_screen.storage_input.text
+        disk_name = disk_screen.disk_name_input.text
 
         if not os.path.exists(storage_path):
             os.makedirs(storage_path)
@@ -187,33 +469,49 @@ class VMScreen(Screen):
         disk_path = os.path.join(storage_path, f"{disk_name}.{disk_format}")
 
         threading.Thread(
-            target=self.create_vm_thread, args=(disk, disk_format, disk_path, ram, cpu)
+            target=self.create_vm_thread, args=(disk_size, disk_format, disk_path, ram, cpu, iso_path)
         ).start()
 
-    def create_vm_thread(self, disk_size, disk_format, disk_path, ram, cpu):
+    def create_vm_thread(self, disk_size, disk_format, disk_path, ram, cpu, iso_path):
         self.progress.value = 10
+        
+        # Create disk
         cmd = ["qemu-img", "create", "-f", disk_format, disk_path, f"{disk_size}G"]
         subprocess.run(cmd)
-        self.progress.value = 40
-        bat_path = disk_path.replace(f".{disk_format}", ".bat")
+        
+        self.progress.value = 50
+        
+        # Create batch file for VM
+        bat_path = disk_path.replace(os.path.splitext(disk_path)[1], ".bat")
 
         with open(bat_path, "w") as f:
             f.write("@echo off\n")
-            f.write(
-                f'start "" C:\\msys64\\mingw64.exe qemu-system-x86_64 -hda "{disk_path}" -boot d -m {ram*1024} -smp {cpu}\n'
-            )
+            if iso_path:
+                f.write(
+                    f'start "" C:\\msys64\\mingw64.exe qemu-system-x86_64 -hda "{disk_path}" -cdrom "{iso_path}" -boot d -m {ram*1024} -smp {cpu}\n'
+                )
+            else:
+                f.write(
+                    f'start "" C:\\msys64\\mingw64.exe qemu-system-x86_64 -hda "{disk_path}" -boot d -m {ram*1024} -smp {cpu}\n'
+                )
 
         subprocess.Popen(
             ["cmd", "/c", bat_path], creationflags=subprocess.CREATE_NEW_CONSOLE
         )
         self.progress.value = 100
-        self.output_label.text = "VM Created and Started!"
+        self.output_label.text = "VM Created and Started Successfully!"
 
 
+# Main App
 class CloudApp(App):
     def build(self):
+        Config.set('kivy', 'keyboard_mode', 'system')
+        Config.set('kivy', 'keyboard_layout', 'qwerty')
+        Config.set('kivy', 'keyboard_type', 'text')
+        
         sm = ScreenManager(transition=FadeTransition())
         sm.add_widget(IntroScreen(name="intro"))
+        sm.add_widget(DiskScreen(name="disk"))
         sm.add_widget(VMScreen(name="vm"))
         return sm
 
