@@ -23,11 +23,35 @@ def find_msys64():
     # Check PATH environment variable
     path_dirs = os.environ.get('PATH', '').split(os.pathsep)
     for path in path_dirs:
-        if 'msys64' in path.lower():
-            # Get the base msys64 directory
-            msys_path = path.lower().split('msys64')[0] + 'msys64'
-            if os.path.exists(msys_path):
-                return msys_path
+        # Check for both MSYS2 and msys64 in the path
+        if 'msys2' in path.lower() or 'msys64' in path.lower():
+            # Try to find the base MSYS2 directory
+            path_parts = path.split(os.sep)
+            for i, part in enumerate(path_parts):
+                if part.lower() in ['msys2', 'msys64']:
+                    # Reconstruct the base path
+                    base_path = os.sep.join(path_parts[:i+1])
+                    if os.path.exists(base_path):
+                        return base_path
+                    
+                    # Also check one level up (in case we're in a subdirectory)
+                    parent_path = os.path.dirname(base_path)
+                    if os.path.exists(parent_path):
+                        return parent_path
+    
+    # Check common installation paths
+    common_paths = [
+        "C:\\msys64",
+        "D:\\msys64",
+        "C:\\Program Files\\MSYS2",
+        "D:\\Program Files\\MSYS2",
+        os.path.expanduser("~\\msys64")
+    ]
+    
+    for path in common_paths:
+        if os.path.exists(path):
+            return path
+    
     return None
 
 class Rotating3DBox(Widget):
