@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from PIL import Image, ImageTk
 import threading
+from splash_screen import SplashScreen
 
 
 class CloudManagementSystem:
@@ -15,6 +16,26 @@ class CloudManagementSystem:
 
         # Set application icon and theme
         self.root.option_add("*Font", "Arial 10")
+
+        # Update the theme and styles
+        self.root.option_add("*TButton*Font", "Arial 10 bold")
+        self.root.option_add("*TLabel*Font", "Arial 10")
+        self.root.option_add("*TEntry*Font", "Arial 10")
+        self.root.option_add("*TCombobox*Font", "Arial 10")
+
+        # Update button styles
+        style = ttk.Style()
+        style.configure("TButton", padding=6, relief="flat", background="#007acc", foreground="white")
+        style.map("TButton", background=[('active', '#005f99')])
+
+        # Update label styles
+        style.configure("TLabel", background="#f0f0f0", foreground="#333333")
+
+        # Update entry styles
+        style.configure("TEntry", fieldbackground="#ffffff", foreground="#333333")
+
+        # Update combobox styles
+        style.configure("TCombobox", fieldbackground="#ffffff", foreground="#333333")
 
         # Create main frame
         self.main_frame = ttk.Frame(self.root, padding="20")
@@ -333,6 +354,11 @@ class CloudManagementSystem:
 
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = CloudManagementSystem(root)
-    root.mainloop()
+    def start_main_app():
+        root = tk.Tk()
+        app = CloudManagementSystem(root)
+        root.mainloop()
+
+    splash_root = tk.Tk()
+    splash = SplashScreen(splash_root, on_close=lambda: (splash_root.destroy(), start_main_app()))
+    splash_root.mainloop()
