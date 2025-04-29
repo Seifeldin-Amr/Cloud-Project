@@ -19,6 +19,17 @@ from tkinter import filedialog
 import math
 from kivy.config import Config
 
+def find_msys64():
+    # Check PATH environment variable
+    path_dirs = os.environ.get('PATH', '').split(os.pathsep)
+    for path in path_dirs:
+        if 'msys64' in path.lower():
+            # Get the base msys64 directory
+            msys_path = path.lower().split('msys64')[0] + 'msys64'
+            if os.path.exists(msys_path):
+                return msys_path
+    return None
+
 class Rotating3DBox(Widget):
     def __init__(self, **kwargs):
         super(Rotating3DBox, self).__init__(**kwargs)
@@ -279,6 +290,9 @@ class DiskScreen(Screen):
 class VMScreen(Screen):
     def __init__(self, **kwargs):
         super(VMScreen, self).__init__(**kwargs)
+        self.msys_path = find_msys64()
+        if self.msys_path is None:
+            self.output_label.text = "MSYS64 not found. Please install MSYS64 first."
         
         # Main container with padding
         self.layout = BoxLayout(orientation="vertical", spacing=20, padding=40)
@@ -486,13 +500,18 @@ class VMScreen(Screen):
 
         with open(bat_path, "w") as f:
             f.write("@echo off\n")
+            if self.msys_path is None:
+                self.output_label.text = "MSYS64 not found. Please install MSYS64 first."
+                return
+                
+            qemu_path = os.path.join(self.msys_path, "mingw64.exe")  # Correct path: C:\msys64\mingw64.exe
             if iso_path:
                 f.write(
-                    f'start "" C:\\msys64\\mingw64.exe qemu-system-x86_64 -hda "{disk_path}" -cdrom "{iso_path}" -boot d -m {ram*1024} -smp {cpu}\n'
+                    f'start "" "{qemu_path}" qemu-system-x86_64 -hda "{disk_path}" -cdrom "{iso_path}" -boot d -m {ram*1024} -smp {cpu}\n'
                 )
             else:
                 f.write(
-                    f'start "" C:\\msys64\\mingw64.exe qemu-system-x86_64 -hda "{disk_path}" -boot d -m {ram*1024} -smp {cpu}\n'
+                    f'start "" "{qemu_path}" qemu-system-x86_64 -hda "{disk_path}" -boot d -m {ram*1024} -smp {cpu}\n'
                 )
 
         subprocess.Popen(
@@ -508,6 +527,17 @@ class CloudApp(App):
         Config.set('kivy', 'keyboard_mode', 'system')
         Config.set('kivy', 'keyboard_layout', 'qwerty')
         Config.set('kivy', 'keyboard_type', 'text')
+        
+        # Check for MSYS64 before proceeding
+        msys_path = find_msys64()
+        if msys_path is None:
+            from kivy.uix.popup import Popup
+            from kivy.uix.label import Label
+            popup = Popup(title='Error',
+                         content=Label(text='MSYS64 not found in PATH. Please install MSYS64 and add it to your PATH environment variable.'),
+                         size_hint=(None, None), size=(400, 200))
+            popup.open()
+            return None
         
         sm = ScreenManager(transition=FadeTransition())
         sm.add_widget(IntroScreen(name="intro"))
