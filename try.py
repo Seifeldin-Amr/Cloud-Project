@@ -55,6 +55,24 @@ def find_msys64():
     
     return None
 
+def get_disk_directory():
+    msys_path = find_msys64()
+    if not msys_path:
+        return None
+    
+    # Get the username and create the disk directory path
+    username = os.getlogin()
+    disk_dir = os.path.join(msys_path, "home", username, "qemu-disks")
+    
+    # Create the directory if it doesn't exist
+    try:
+        os.makedirs(disk_dir, exist_ok=True)
+    except Exception as e:
+        print(f"Error creating disk directory: {str(e)}")
+        return None
+        
+    return disk_dir
+
 class Rotating3DBox(Widget):
     def __init__(self, **kwargs):
         super(Rotating3DBox, self).__init__(**kwargs)
@@ -326,15 +344,16 @@ class DiskScreen(Screen):
             self.show_error("Please enter a valid disk size (positive integer)")
             return
 
-        # Set the disk directory path
-        disk_dir = r"C:\msys64\home\Asus\qemu-disks"
-        try:
-            os.makedirs(disk_dir, exist_ok=True)
-        except Exception as e:
-            self.show_error(f"Failed to create disk directory: {str(e)}")
+        # Get the disk directory
+        disk_dir = get_disk_directory()
+        if not disk_dir:
+            self.show_error("Failed to access or create disk directory")
             return
 
+        print(f"Creating disk in directory: {disk_dir}")  # Debug print
+        
         disk_path = os.path.join(disk_dir, f"{disk_name}.{disk_format}")
+        print(f"Full disk path: {disk_path}")  # Debug print
 
         try:
             # Create the disk using qemu-img
@@ -346,6 +365,9 @@ class DiskScreen(Screen):
                 f"{disk_size}G"
             ], check=True)
             
+            print(f"Disk created successfully at: {disk_path}")  # Debug print
+            print(f"Disk file exists: {os.path.exists(disk_path)}")  # Debug print
+            
             self.show_success(f"Disk created successfully")
             
             # Update the disk list in the VM screen before switching
@@ -354,8 +376,10 @@ class DiskScreen(Screen):
             
             self.manager.current = "selection"
         except subprocess.CalledProcessError as e:
+            print(f"Error creating disk: {str(e)}")  # Debug print
             self.show_error(f"Failed to create disk: {str(e)}")
         except Exception as e:
+            print(f"Unexpected error: {str(e)}")  # Debug print
             self.show_error(f"An error occurred: {str(e)}")
 
     def show_error(self, message):
@@ -505,8 +529,8 @@ class VMScreen(Screen):
             self.iso_path.text = file_path
 
     def get_available_disks(self):
-        disk_dir = r"C:\msys64\home\Asus\qemu-disks"
-        if not os.path.exists(disk_dir):
+        disk_dir = get_disk_directory()
+        if not disk_dir:
             return ["No disks available"]
         
         disks = []
@@ -554,7 +578,7 @@ class VMScreen(Screen):
             self.show_error(f"mingw64.exe not found at {qemu_path}")
             return
 
-        disk_dir = os.path.join(msys_path, "home", os.getlogin(), "qemu-disks")
+        disk_dir = get_disk_directory()
         disk_path = os.path.join(disk_dir, selected_disk)
 
         if not os.path.exists(disk_path):
@@ -709,7 +733,16 @@ class ExistingVMsScreen(Screen):
             ))
             return
 
-        disk_dir = os.path.join(msys_path, "home", os.getlogin(), "qemu-disks")
+        disk_dir = get_disk_directory()
+        if not disk_dir:
+            self.vm_list.add_widget(Label(
+                text="Failed to access disk directory",
+                color=(1, 0, 0, 1),
+                size_hint_y=None,
+                height=50
+            ))
+            return
+
         if not os.path.exists(disk_dir):
             self.vm_list.add_widget(Label(
                 text="No VMs found",
@@ -769,7 +802,11 @@ class ExistingVMsScreen(Screen):
             self.show_error("MSYS2 not found")
             return
 
-        disk_dir = os.path.join(msys_path, "home", os.getlogin(), "qemu-disks")
+        disk_dir = get_disk_directory()
+        if not disk_dir:
+            self.show_error("Failed to access disk directory")
+            return
+
         batch_file = os.path.join(disk_dir, f"{vm_name}.bat")
 
         if not os.path.exists(batch_file):
@@ -789,7 +826,10 @@ class ExistingVMsScreen(Screen):
                 if not msys_path:
                     raise Exception("MSYS2 not found")
                 
-                disk_dir = os.path.join(msys_path, "home", os.getlogin(), "qemu-disks")
+                disk_dir = get_disk_directory()
+                if not disk_dir:
+                    raise Exception("Failed to access disk directory")
+                
                 batch_file = os.path.join(disk_dir, f"{vm_name}.bat")
                 
                 if os.path.exists(batch_file):
@@ -913,18 +953,22 @@ class DiskManagementScreen(Screen):
 
     def update_disk_list(self):
         self.disk_list.clear_widgets()
-        msys_path = find_msys64()
-        if not msys_path:
+        
+        # Get the disk directory
+        disk_dir = get_disk_directory()
+        if not disk_dir:
             self.disk_list.add_widget(Label(
-                text="MSYS2 not found. Please install MSYS2.",
+                text="Failed to access disk directory",
                 color=(1, 0, 0, 1),
                 size_hint_y=None,
                 height=50
             ))
             return
 
-        disk_dir = os.path.join(msys_path, "home", os.getlogin(), "qemu-disks")
+        print(f"Looking for disks in: {disk_dir}")  # Debug print
+        
         if not os.path.exists(disk_dir):
+            print(f"Disk directory does not exist: {disk_dir}")  # Debug print
             self.disk_list.add_widget(Label(
                 text="No disks found",
                 color=(1, 1, 1, 1),
@@ -935,6 +979,8 @@ class DiskManagementScreen(Screen):
 
         # Find all disk files
         disk_files = [f for f in os.listdir(disk_dir) if f.endswith(('.qcow2', '.raw', '.vmdk', '.vhdx'))]
+        print(f"Found disk files: {disk_files}")  # Debug print
+        
         if not disk_files:
             self.disk_list.add_widget(Label(
                 text="No disks found",
@@ -977,6 +1023,13 @@ class DiskManagementScreen(Screen):
                 os.remove(disk_path)
                 self.show_success(f"Disk {disk_name} deleted successfully")
                 self.update_disk_list()
+                
+                # Update the disk list in the VM screen
+                vm_screen = self.manager.get_screen('vm')
+                vm_screen.disk_selection.values = vm_screen.get_available_disks()
+                if disk_name in vm_screen.disk_selection.values:
+                    vm_screen.disk_selection.text = "Select virtual disk"
+                
             except Exception as e:
                 self.show_error(f"Failed to delete disk: {str(e)}")
             popup.dismiss()
