@@ -1,2 +1,4 @@
-kivy>=2.0.0
-tkinter
+kivy==2.3.0
+pyglet==2.0.10
+Pillow>=9.0.0
+tk
