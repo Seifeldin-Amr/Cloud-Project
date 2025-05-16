@@ -156,11 +156,65 @@ class IntroScreen(Screen):
         self.bg_rect.pos = instance.pos
 
     def start_app(self, instance):
-        self.manager.current = "selection"
+        self.manager.current = "service_selection"
 
-class SelectionScreen(Screen):
+class ServiceSelectionScreen(Screen):
     def __init__(self, **kwargs):
-        super(SelectionScreen, self).__init__(**kwargs)
+        super(ServiceSelectionScreen, self).__init__(**kwargs)
+        
+        # Main container with padding
+        self.layout = BoxLayout(orientation="vertical", spacing=20, padding=40)
+        self.add_widget(self.layout)
+
+        # Title
+        title = Label(
+            text="Cloud Management System",
+            font_size=32,
+            bold=True,
+            color=(0.3, 0.7, 1, 1),
+            size_hint=(1, None),
+            height=50
+        )
+        self.layout.add_widget(title)
+
+        # Button container
+        button_container = BoxLayout(orientation="vertical", spacing=30, size_hint=(1, 0.6))
+        
+        # VM Management button
+        self.vm_management_btn = Button(
+            text="Virtual Machine Management",
+            size_hint=(0.8, None),
+            height=80,
+            background_color=(0.3, 0.7, 1, 1),
+            font_size=28,
+            pos_hint={'center_x': 0.5}
+        )
+        self.vm_management_btn.bind(on_press=self.go_to_vm_management)
+        button_container.add_widget(self.vm_management_btn)
+
+        # Docker Management button
+        self.docker_management_btn = Button(
+            text="Docker Management",
+            size_hint=(0.8, None),
+            height=80,
+            background_color=(0.3, 0.7, 1, 1),
+            font_size=28,
+            pos_hint={'center_x': 0.5}
+        )
+        self.docker_management_btn.bind(on_press=self.go_to_docker_management)
+        button_container.add_widget(self.docker_management_btn)
+
+        self.layout.add_widget(button_container)
+
+    def go_to_vm_management(self, instance):
+        self.manager.current = "vm_selection"
+
+    def go_to_docker_management(self, instance):
+        self.manager.current = "docker"
+
+class VMSelectionScreen(Screen):
+    def __init__(self, **kwargs):
+        super(VMSelectionScreen, self).__init__(**kwargs)
         
         # Main container with padding
         self.layout = BoxLayout(orientation="vertical", spacing=20, padding=40)
@@ -230,6 +284,17 @@ class SelectionScreen(Screen):
 
         self.layout.add_widget(button_container)
 
+        # Back button
+        self.back_btn = Button(
+            text="Back to Main Menu",
+            size_hint=(0.4, None),
+            height=50,
+            background_color=(0.3, 0.7, 1, 1),
+            pos_hint={'center_x': 0.5}
+        )
+        self.back_btn.bind(on_press=self.go_back)
+        self.layout.add_widget(self.back_btn)
+
     def go_to_disk(self, instance):
         self.manager.current = "disk"
 
@@ -241,6 +306,636 @@ class SelectionScreen(Screen):
 
     def go_to_existing_vms(self, instance):
         self.manager.current = "existing_vms"
+
+    def go_back(self, instance):
+        self.manager.current = "service_selection"
+
+class DockerScreen(Screen):
+    def __init__(self, **kwargs):
+        super(DockerScreen, self).__init__(**kwargs)
+
+        # Main container with padding
+        self.layout = BoxLayout(orientation="vertical", spacing=20, padding=40)
+        self.add_widget(self.layout)
+
+        # Title
+        title = Label(
+            text="Docker Management",
+            font_size=32,
+            bold=True,
+            color=(0.3, 0.7, 1, 1),
+            size_hint=(1, None),
+            height=50
+        )
+        self.layout.add_widget(title)
+
+        # Button container
+        button_container = BoxLayout(orientation="vertical", spacing=20, size_hint=(1, 0.6))
+
+        # Create Dockerfile button
+        self.create_dockerfile_btn = Button(
+            text="Create Dockerfile",
+            size_hint=(0.8, None),
+            height=60,
+            background_color=(0.3, 0.7, 1, 1),
+            font_size=24,
+            pos_hint={'center_x': 0.5}
+        )
+        self.create_dockerfile_btn.bind(on_press=self.create_dockerfile)
+        button_container.add_widget(self.create_dockerfile_btn)
+
+        # Build Docker Image button
+        self.build_image_btn = Button(
+            text="Build Docker Image",
+            size_hint=(0.8, None),
+            height=60,
+            background_color=(0.3, 0.7, 1, 1),
+            font_size=24,
+            pos_hint={'center_x': 0.5}
+        )
+        self.build_image_btn.bind(on_press=self.build_docker_image)
+        button_container.add_widget(self.build_image_btn)
+
+        # List Docker Images button
+        self.list_images_btn = Button(
+            text="List Docker Images",
+            size_hint=(0.8, None),
+            height=60,
+            background_color=(0.3, 0.7, 1, 1),
+            font_size=24,
+            pos_hint={'center_x': 0.5}
+        )
+        self.list_images_btn.bind(on_press=self.list_docker_images)
+        button_container.add_widget(self.list_images_btn)
+
+        # List Running Containers button
+        self.list_containers_btn = Button(
+            text="List Running Containers",
+            size_hint=(0.8, None),
+            height=60,
+            background_color=(0.3, 0.7, 1, 1),
+            font_size=24,
+            pos_hint={'center_x': 0.5}
+        )
+        self.list_containers_btn.bind(on_press=self.list_running_containers)
+        button_container.add_widget(self.list_containers_btn)
+
+        # Stop Container button
+        self.stop_container_btn = Button(
+            text="Stop a Container",
+            size_hint=(0.8, None),
+            height=60,
+            background_color=(0.3, 0.7, 1, 1),
+            font_size=24,
+            pos_hint={'center_x': 0.5}
+        )
+        self.stop_container_btn.bind(on_press=self.stop_container)
+        button_container.add_widget(self.stop_container_btn)
+
+        # Search Image button
+        self.search_image_btn = Button(
+            text="Search Docker Image",
+            size_hint=(0.8, None),
+            height=60,
+            background_color=(0.3, 0.7, 1, 1),
+            font_size=24,
+            pos_hint={'center_x': 0.5}
+        )
+        self.search_image_btn.bind(on_press=self.search_image)
+        button_container.add_widget(self.search_image_btn)
+
+        # Search DockerHub button
+        self.search_dockerhub_btn = Button(
+            text="Search DockerHub",
+            size_hint=(0.8, None),
+            height=60,
+            background_color=(0.3, 0.7, 1, 1),
+            font_size=24,
+            pos_hint={'center_x': 0.5}
+        )
+        self.search_dockerhub_btn.bind(on_press=self.search_dockerhub)
+        button_container.add_widget(self.search_dockerhub_btn)
+
+        # Pull Image button
+        self.pull_image_btn = Button(
+            text="Pull Docker Image",
+            size_hint=(0.8, None),
+            height=60,
+            background_color=(0.3, 0.7, 1, 1),
+            font_size=24,
+            pos_hint={'center_x': 0.5}
+        )
+        self.pull_image_btn.bind(on_press=self.pull_image)
+        button_container.add_widget(self.pull_image_btn)
+
+        self.layout.add_widget(button_container)
+
+        # Back button
+        self.back_btn = Button(
+            text="Back",
+            size_hint=(0.3, None),
+            height=50,
+            background_color=(0.3, 0.7, 1, 1),
+            pos_hint={'center_x': 0.5}
+        )
+        self.back_btn.bind(on_press=self.go_back)
+        self.layout.add_widget(self.back_btn)
+
+    def create_dockerfile(self, instance):
+        # Create a popup to input Dockerfile details
+        layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
+        
+        # Instructions label
+        layout.add_widget(Label(text='Enter Dockerfile content:', size_hint_y=None, height=30))
+        
+        # Text input for Dockerfile content with default template
+        default_content = """FROM python:3.9-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+CMD ["python", "app.py"]
+"""
+        text_input = TextInput(text=default_content, multiline=True, size_hint=(1, 1))
+        layout.add_widget(text_input)
+        
+        # Path input
+        path_layout = BoxLayout(orientation='horizontal', size_hint_y=None, height=30)
+        path_layout.add_widget(Label(text='Save to directory:', size_hint_x=0.3))
+        path_input = TextInput(text=os.getcwd(), size_hint_x=0.7)
+        path_layout.add_widget(path_input)
+        layout.add_widget(path_layout)
+        
+        # Button layout
+        btn_layout = BoxLayout(orientation='horizontal', size_hint_y=None, height=50, spacing=10)
+        
+        # Function to save Dockerfile
+        def save_dockerfile(btn):
+            try:
+                dockerfile_path = os.path.join(path_input.text, 'Dockerfile')
+                with open(dockerfile_path, 'w') as f:
+                    f.write(text_input.text)
+                result_popup = Popup(title='Success', 
+                                     content=Label(text=f'Dockerfile saved to {dockerfile_path}'),
+                                     size_hint=(0.6, 0.3))
+                result_popup.open()
+                popup.dismiss()
+            except Exception as e:
+                error_popup = Popup(title='Error', 
+                                   content=Label(text=f'Failed to save Dockerfile: {str(e)}'),
+                                   size_hint=(0.6, 0.3))
+                error_popup.open()
+        
+        # Create save and cancel buttons
+        save_btn = Button(text='Save')
+        save_btn.bind(on_press=save_dockerfile)
+        cancel_btn = Button(text='Cancel')
+        cancel_btn.bind(on_press=lambda x: popup.dismiss())
+        
+        btn_layout.add_widget(save_btn)
+        btn_layout.add_widget(cancel_btn)
+        layout.add_widget(btn_layout)
+        
+        # Create and open popup
+        popup = Popup(title='Create Dockerfile', content=layout, size_hint=(0.8, 0.8))
+        popup.open()
+
+    def build_docker_image(self, instance):
+        # Create a popup to get image name and path
+        layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
+        
+        # Path input
+        path_layout = BoxLayout(orientation='horizontal', size_hint_y=None, height=30)
+        path_layout.add_widget(Label(text='Dockerfile directory:', size_hint_x=0.3))
+        path_input = TextInput(text=os.getcwd(), size_hint_x=0.7)
+        path_layout.add_widget(path_input)
+        layout.add_widget(path_layout)
+        
+        # Image name input
+        name_layout = BoxLayout(orientation='horizontal', size_hint_y=None, height=30)
+        name_layout.add_widget(Label(text='Image name:tag:', size_hint_x=0.3))
+        name_input = TextInput(text='my-app:latest', size_hint_x=0.7)
+        name_layout.add_widget(name_input)
+        layout.add_widget(name_layout)
+        
+        # Output display
+        output_label = Label(text='Build output will appear here...', size_hint_y=None, height=30)
+        output_text = TextInput(readonly=True, multiline=True, size_hint=(1, 1))
+        layout.add_widget(output_label)
+        layout.add_widget(output_text)
+        
+        # Button layout
+        btn_layout = BoxLayout(orientation='horizontal', size_hint_y=None, height=50, spacing=10)
+        
+        # Function to build Docker image
+        def build_image(btn):
+            try:
+                cmd = ['docker', 'build', '-t', name_input.text, path_input.text]
+                process = subprocess.Popen(
+                    cmd, 
+                    stdout=subprocess.PIPE, 
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    bufsize=1,
+                    universal_newlines=True
+                )
+                
+                output = ""
+                for line in process.stdout:
+                    output += line
+                    output_text.text = output
+                
+                process.wait()
+                
+                if process.returncode == 0:
+                    output_text.text += "\nBuild completed successfully!"
+                else:
+                    output_text.text += f"\nBuild failed with return code: {process.returncode}"
+                    
+            except Exception as e:
+                output_text.text = f"Error executing docker build: {str(e)}"
+        
+        # Create build and cancel buttons
+        build_btn = Button(text='Build')
+        build_btn.bind(on_press=build_image)
+        cancel_btn = Button(text='Close')
+        cancel_btn.bind(on_press=lambda x: popup.dismiss())
+        
+        btn_layout.add_widget(build_btn)
+        btn_layout.add_widget(cancel_btn)
+        layout.add_widget(btn_layout)
+        
+        # Create and open popup
+        popup = Popup(title='Build Docker Image', content=layout, size_hint=(0.8, 0.8))
+        popup.open()
+
+    def list_docker_images(self, instance):
+        # Create a popup to display Docker images
+        layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
+        
+        # Output display
+        output_text = TextInput(readonly=True, multiline=True, size_hint=(1, 1))
+        layout.add_widget(output_text)
+        
+        # Function to get Docker images
+        def get_images():
+            try:
+                cmd = ['docker', 'images']
+                process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                stdout, stderr = process.communicate()
+                
+                if process.returncode == 0:
+                    output_text.text = stdout
+                else:
+                    output_text.text = f"Error: {stderr}"
+                    
+            except Exception as e:
+                output_text.text = f"Error executing docker images: {str(e)}"
+        
+        # Refresh button
+        refresh_btn = Button(text='Refresh', size_hint=(1, None), height=50)
+        refresh_btn.bind(on_press=lambda x: get_images())
+        layout.add_widget(refresh_btn)
+        
+        # Close button
+        close_btn = Button(text='Close', size_hint=(1, None), height=50)
+        close_btn.bind(on_press=lambda x: popup.dismiss())
+        layout.add_widget(close_btn)
+        
+        # Create and open popup
+        popup = Popup(title='Docker Images', content=layout, size_hint=(0.8, 0.8))
+        
+        # Initial load of images
+        get_images()
+        
+        popup.open()
+
+    def list_running_containers(self, instance):
+        # Create a popup to display running containers
+        layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
+        
+        # Show all containers checkbox
+        checkbox_layout = BoxLayout(orientation='horizontal', size_hint_y=None, height=30)
+        show_all_label = Label(text='Show all containers (including stopped):', size_hint_x=0.7)
+        
+        # Using button as checkbox for simplicity
+        show_all_btn = Button(text='No', size_hint_x=0.3)
+        show_all = [False]  # Using list to make it mutable in the closure
+        
+        def toggle_show_all(btn):
+            show_all[0] = not show_all[0]
+            btn.text = 'Yes' if show_all[0] else 'No'
+            refresh_containers(None)
+            
+        show_all_btn.bind(on_press=toggle_show_all)
+        checkbox_layout.add_widget(show_all_label)
+        checkbox_layout.add_widget(show_all_btn)
+        layout.add_widget(checkbox_layout)
+        
+        # Output display
+        output_text = TextInput(readonly=True, multiline=True, size_hint=(1, 1))
+        layout.add_widget(output_text)
+        
+        # Function to get Docker containers
+        def refresh_containers(btn):
+            try:
+                cmd = ['docker', 'ps']
+                if show_all[0]:
+                    cmd.append('-a')
+                    
+                process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                stdout, stderr = process.communicate()
+                
+                if process.returncode == 0:
+                    output_text.text = stdout
+                else:
+                    output_text.text = f"Error: {stderr}"
+                    
+            except Exception as e:
+                output_text.text = f"Error executing docker ps: {str(e)}"
+        
+        # Refresh button
+        refresh_btn = Button(text='Refresh', size_hint=(1, None), height=50)
+        refresh_btn.bind(on_press=refresh_containers)
+        layout.add_widget(refresh_btn)
+        
+        # Close button
+        close_btn = Button(text='Close', size_hint=(1, None), height=50)
+        close_btn.bind(on_press=lambda x: popup.dismiss())
+        layout.add_widget(close_btn)
+        
+        # Create and open popup
+        popup = Popup(title='Docker Containers', content=layout, size_hint=(0.8, 0.8))
+        
+        # Initial load of containers
+        refresh_containers(None)
+        
+        popup.open()
+
+    def stop_container(self, instance):
+        # Create a popup to stop a container
+        layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
+        
+        # Get running containers first to display
+        try:
+            cmd = ['docker', 'ps', '--format', '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}']
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            stdout, stderr = process.communicate()
+            
+            if process.returncode != 0:
+                stderr = f"Error getting containers: {stderr}"
+        except Exception as e:
+            stderr = f"Error executing docker ps: {str(e)}"
+            stdout = ""
+        
+        # Instructions and container list
+        layout.add_widget(Label(text='Running Containers:', size_hint_y=None, height=30))
+        containers_text = TextInput(text=stdout, readonly=True, multiline=True, size_hint=(1, 0.5))
+        layout.add_widget(containers_text)
+        
+        # Container ID input
+        id_layout = BoxLayout(orientation='horizontal', size_hint_y=None, height=30)
+        id_layout.add_widget(Label(text='Container ID or Name:', size_hint_x=0.3))
+        id_input = TextInput(size_hint_x=0.7)
+        id_layout.add_widget(id_input)
+        layout.add_widget(id_layout)
+        
+        # Output display
+        output_text = TextInput(readonly=True, multiline=True, size_hint=(1, 0.3))
+        layout.add_widget(Label(text='Output:', size_hint_y=None, height=30))
+        layout.add_widget(output_text)
+        
+        # Function to stop container
+        def do_stop_container(btn):
+            if not id_input.text.strip():
+                output_text.text = "Please enter a container ID or name"
+                return
+                
+            try:
+                cmd = ['docker', 'stop', id_input.text.strip()]
+                process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                stdout, stderr = process.communicate()
+                
+                if process.returncode == 0:
+                    output_text.text = f"Container {stdout.strip()} stopped successfully"
+                    
+                    # Refresh container list
+                    refresh_cmd = ['docker', 'ps', '--format', '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}']
+                    refresh_process = subprocess.Popen(refresh_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                    refresh_stdout, _ = refresh_process.communicate()
+                    containers_text.text = refresh_stdout
+                else:
+                    output_text.text = f"Error stopping container: {stderr}"
+                    
+            except Exception as e:
+                output_text.text = f"Error executing docker stop: {str(e)}"
+        
+        # Button layout
+        btn_layout = BoxLayout(orientation='horizontal', size_hint_y=None, height=50, spacing=10)
+        
+        # Create stop and close buttons
+        stop_btn = Button(text='Stop Container')
+        stop_btn.bind(on_press=do_stop_container)
+        close_btn = Button(text='Close')
+        close_btn.bind(on_press=lambda x: popup.dismiss())
+        
+        btn_layout.add_widget(stop_btn)
+        btn_layout.add_widget(close_btn)
+        layout.add_widget(btn_layout)
+        
+        # Create and open popup
+        popup = Popup(title='Stop Docker Container', content=layout, size_hint=(0.8, 0.8))
+        popup.open()
+
+    def search_image(self, instance):
+        # Create a popup to search for Docker images locally
+        layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
+        
+        # Search input
+        search_layout = BoxLayout(orientation='horizontal', size_hint_y=None, height=30)
+        search_layout.add_widget(Label(text='Search term:', size_hint_x=0.3))
+        search_input = TextInput(size_hint_x=0.7)
+        search_layout.add_widget(search_input)
+        layout.add_widget(search_layout)
+        
+        # Output display
+        output_text = TextInput(readonly=True, multiline=True, size_hint=(1, 1))
+        layout.add_widget(output_text)
+        
+        # Function to search Docker images
+        def do_search_image(btn):
+            try:
+                # Use grep-like filtering on docker images output
+                search_term = search_input.text.strip()
+                
+                if not search_term:
+                    output_text.text = "Please enter a search term"
+                    return
+                    
+                # Get all images
+                cmd = ['docker', 'images']
+                process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                stdout, stderr = process.communicate()
+                
+                if process.returncode == 0:
+                    # Filter the output based on search term
+                    lines = stdout.split('\n')
+                    header = lines[0]
+                    matches = [line for line in lines[1:] if search_term.lower() in line.lower()]
+                    
+                    result = header + '\n' + '\n'.join(matches)
+                    output_text.text = result
+                else:
+                    output_text.text = f"Error: {stderr}"
+                    
+            except Exception as e:
+                output_text.text = f"Error searching docker images: {str(e)}"
+        
+        # Button layout
+        btn_layout = BoxLayout(orientation='horizontal', size_hint_y=None, height=50, spacing=10)
+        
+        # Create search and close buttons
+        search_btn = Button(text='Search')
+        search_btn.bind(on_press=do_search_image)
+        close_btn = Button(text='Close')
+        close_btn.bind(on_press=lambda x: popup.dismiss())
+        
+        btn_layout.add_widget(search_btn)
+        btn_layout.add_widget(close_btn)
+        layout.add_widget(btn_layout)
+        
+        # Create and open popup
+        popup = Popup(title='Search Docker Images', content=layout, size_hint=(0.8, 0.8))
+        popup.open()
+
+    def search_dockerhub(self, instance):
+        # Create a popup to search DockerHub
+        layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
+        
+        # Search input
+        search_layout = BoxLayout(orientation='horizontal', size_hint_y=None, height=30)
+        search_layout.add_widget(Label(text='Search term:', size_hint_x=0.3))
+        search_input = TextInput(size_hint_x=0.7)
+        search_layout.add_widget(search_input)
+        layout.add_widget(search_layout)
+        
+        # Output display
+        output_text = TextInput(readonly=True, multiline=True, size_hint=(1, 1))
+        layout.add_widget(output_text)
+        
+        # Function to search DockerHub
+        def do_search_dockerhub(btn):
+            try:
+                search_term = search_input.text.strip()
+                
+                if not search_term:
+                    output_text.text = "Please enter a search term"
+                    return
+                    
+                # Search DockerHub
+                cmd = ['docker', 'search', search_term]
+                process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                stdout, stderr = process.communicate()
+                
+                if process.returncode == 0:
+                    output_text.text = stdout
+                else:
+                    output_text.text = f"Error: {stderr}"
+                    
+            except Exception as e:
+                output_text.text = f"Error searching DockerHub: {str(e)}"
+        
+        # Button layout
+        btn_layout = BoxLayout(orientation='horizontal', size_hint_y=None, height=50, spacing=10)
+        
+        # Create search and close buttons
+        search_btn = Button(text='Search')
+        search_btn.bind(on_press=do_search_dockerhub)
+        close_btn = Button(text='Close')
+        close_btn.bind(on_press=lambda x: popup.dismiss())
+        
+        btn_layout.add_widget(search_btn)
+        btn_layout.add_widget(close_btn)
+        layout.add_widget(btn_layout)
+        
+        # Create and open popup
+        popup = Popup(title='Search DockerHub', content=layout, size_hint=(0.8, 0.8))
+        popup.open()
+
+    def pull_image(self, instance):
+        # Create a popup to pull a Docker image
+        layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
+        
+        # Image name input
+        image_layout = BoxLayout(orientation='horizontal', size_hint_y=None, height=30)
+        image_layout.add_widget(Label(text='Image name:tag:', size_hint_x=0.3))
+        image_input = TextInput(text='ubuntu:latest', size_hint_x=0.7)
+        image_layout.add_widget(image_input)
+        layout.add_widget(image_layout)
+        
+        # Output display
+        output_label = Label(text='Pull output will appear here...', size_hint_y=None, height=30)
+        output_text = TextInput(readonly=True, multiline=True, size_hint=(1, 1))
+        layout.add_widget(output_label)
+        layout.add_widget(output_text)
+        
+        # Button layout
+        btn_layout = BoxLayout(orientation='horizontal', size_hint_y=None, height=50, spacing=10)
+        
+        # Function to pull Docker image
+        def do_pull_image(btn):
+            try:
+                image_name = image_input.text.strip()
+                
+                if not image_name:
+                    output_text.text = "Please enter an image name"
+                    return
+                    
+                cmd = ['docker', 'pull', image_name]
+                process = subprocess.Popen(
+                    cmd, 
+                    stdout=subprocess.PIPE, 
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    bufsize=1,
+                    universal_newlines=True
+                )
+                
+                output = ""
+                for line in process.stdout:
+                    output += line
+                    output_text.text = output
+                
+                process.wait()
+                
+                if process.returncode == 0:
+                    output_text.text += "\nPull completed successfully!"
+                else:
+                    output_text.text += f"\nPull failed with return code: {process.returncode}"
+                    
+            except Exception as e:
+                output_text.text = f"Error pulling docker image: {str(e)}"
+        
+        # Create pull and cancel buttons
+        pull_btn = Button(text='Pull')
+        pull_btn.bind(on_press=do_pull_image)
+        cancel_btn = Button(text='Close')
+        cancel_btn.bind(on_press=lambda x: popup.dismiss())
+        
+        btn_layout.add_widget(pull_btn)
+        btn_layout.add_widget(cancel_btn)
+        layout.add_widget(btn_layout)
+        
+        # Create and open popup
+        popup = Popup(title='Pull Docker Image', content=layout, size_hint=(0.8, 0.8))
+        popup.open()
+
+    def go_back(self, instance):
+        self.manager.current = "service_selection"
 
 # Disk Creation screen
 class DiskScreen(Screen):
@@ -325,7 +1020,7 @@ class DiskScreen(Screen):
         self.layout.add_widget(button_container)
 
     def go_back(self, instance):
-        self.manager.current = "selection"
+        self.manager.current = "vm_selection"
 
     def create_disk(self, instance):
         disk_name = self.disk_name.text.strip()
@@ -374,7 +1069,7 @@ class DiskScreen(Screen):
             vm_screen = self.manager.get_screen('vm')
             vm_screen.disk_selection.values = vm_screen.get_available_disks()
             
-            self.manager.current = "selection"
+            self.manager.current = "vm_selection"
         except subprocess.CalledProcessError as e:
             print(f"Error creating disk: {str(e)}")  # Debug print
             self.show_error(f"Failed to create disk: {str(e)}")
@@ -541,7 +1236,7 @@ class VMScreen(Screen):
         return disks if disks else ["No disks available"]
 
     def go_back(self, instance):
-        self.manager.current = "selection"
+        self.manager.current = "vm_selection"
 
     def create_vm(self, instance):
         vm_name = self.vm_name.text.strip()
@@ -614,7 +1309,7 @@ class VMScreen(Screen):
                 try:
                     subprocess.run([batch_file], shell=True, check=True)
                     popup.dismiss()
-                    self.manager.current = "selection"
+                    self.manager.current = "vm_selection"
                 except Exception as e:
                     self.show_error(f"Failed to launch VM: {str(e)}")
             
@@ -633,7 +1328,7 @@ class VMScreen(Screen):
             )
             popup.open()
             
-            self.manager.current = "selection"
+            self.manager.current = "vm_selection"
         except subprocess.CalledProcessError as e:
             self.show_error(f"Failed to create VM: {str(e)}")
         except FileNotFoundError:
@@ -886,7 +1581,7 @@ class ExistingVMsScreen(Screen):
         popup.open()
 
     def go_back(self, instance):
-        self.manager.current = "selection"
+        self.manager.current = "vm_selection"
 
 class DiskManagementScreen(Screen):
     def __init__(self, **kwargs):
@@ -1078,7 +1773,7 @@ class DiskManagementScreen(Screen):
         popup.open()
 
     def go_back(self, instance):
-        self.manager.current = "selection"
+        self.manager.current = "vm_selection"
 
 # Main App
 class CloudApp(App):
@@ -1100,11 +1795,13 @@ class CloudApp(App):
         
         sm = ScreenManager(transition=FadeTransition())
         sm.add_widget(IntroScreen(name="intro"))
-        sm.add_widget(SelectionScreen(name="selection"))
+        sm.add_widget(ServiceSelectionScreen(name="service_selection"))
+        sm.add_widget(VMSelectionScreen(name="vm_selection"))
         sm.add_widget(DiskScreen(name="disk"))
         sm.add_widget(DiskManagementScreen(name="manage_disks"))
         sm.add_widget(VMScreen(name="vm"))
         sm.add_widget(ExistingVMsScreen(name="existing_vms"))
+        sm.add_widget(DockerScreen(name="docker"))
         return sm
 
 
