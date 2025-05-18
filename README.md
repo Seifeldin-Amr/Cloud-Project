@@ -40,7 +40,17 @@ A modern GUI application for managing virtual machines using QEMU/KVM, built wit
 - Docker Desktop (for Docker management)
 - Required Python packages (install via pip):
   ```
-  pip install kivy docker
+  pip install kivy==2.2.1
+  pip install docker==7.0.0
+  pip install pillow==10.2.0
+  pip install docutils==0.20.1
+  pip install pygments==2.17.2
+  pip install pypiwin32==223
+  pip install kivymd==1.1.1
+  ```
+  Or install all requirements at once:
+  ```
+  pip install -r requirements.txt
   ```
 
 ## Installation
