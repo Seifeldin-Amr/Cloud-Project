@@ -15,6 +15,18 @@ A modern GUI application for managing virtual machines using QEMU/KVM, built wit
   - Start/Stop virtual machines
   - Delete virtual machines
 
+- **Docker Management**
+  - Create and manage Dockerfiles
+  - Build Docker images
+  - Pull images from Docker Hub
+  - Manage Docker containers
+    - Start/Stop containers
+    - View container logs
+    - Remove containers
+  - Port mapping configuration
+  - Custom command execution
+  - Container naming and customization
+
 - **User Interface**
   - Modern and intuitive GUI built with Kivy
   - 3D animated intro screen
@@ -25,9 +37,10 @@ A modern GUI application for managing virtual machines using QEMU/KVM, built wit
 
 - Python 3.x
 - MSYS2 (for QEMU/KVM support)
+- Docker Desktop (for Docker management)
 - Required Python packages (install via pip):
   ```
-  pip install kivy
+  pip install kivy docker
   ```
 
 ## Installation
@@ -38,8 +51,9 @@ A modern GUI application for managing virtual machines using QEMU/KVM, built wit
    ```
    pacman -S mingw-w64-x86_64-qemu
    ```
-4. Clone this repository
-5. Install the required Python packages:
+4. Install Docker Desktop from [https://www.docker.com/products/docker-desktop/](https://www.docker.com/products/docker-desktop/)
+5. Clone this repository
+6. Install the required Python packages:
    ```
    pip install -r requirements.txt
    ```
@@ -56,6 +70,7 @@ A modern GUI application for managing virtual machines using QEMU/KVM, built wit
    - **Manage Virtual Disks**: View and manage existing virtual disks
    - **Create Virtual Machine**: Create a new VM with custom settings
    - **Access Existing VMs**: View and manage existing virtual machines
+   - **Docker Management**: Access Docker container and image management features
 
 3. Creating a Virtual Machine:
    - Enter VM name
@@ -70,6 +85,16 @@ A modern GUI application for managing virtual machines using QEMU/KVM, built wit
    - Start/Stop VMs
    - Delete VMs
    - Refresh the VM list
+
+5. Docker Management:
+   - Create and manage Dockerfiles
+   - Build Docker images
+   - Pull images from Docker Hub
+   - Run containers with custom configurations
+   - View and manage running containers
+   - Monitor container logs
+   - Configure port mappings
+   - Execute custom commands
 
 ## Directory Structure
 
